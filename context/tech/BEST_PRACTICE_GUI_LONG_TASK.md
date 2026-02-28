@@ -1,4 +1,4 @@
-# Best Practice: GUI 长任务体验
+# 最佳实践：GUI 长任务体验 (Best Practice: GUI Long-Task UX)
 
 ## 原则
 - 先可见，再可控：先解决“用户不知道系统在干什么”

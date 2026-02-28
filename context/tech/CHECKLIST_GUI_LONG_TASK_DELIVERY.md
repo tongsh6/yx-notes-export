@@ -1,4 +1,4 @@
-# Checklist: GUI 长任务交付
+# 检查清单：GUI 长任务交付 (Checklist: GUI Long-Task Delivery)
 
 ## 交互可见性
 - [ ] 有实时活动状态（不只进度条）

@@ -1,4 +1,4 @@
-# Skill: PySide6 Long-Task UX
+# 技能卡：PySide6 长任务交互体验 (Skill: PySide6 Long-Task UX)
 
 ## 适用场景
 - 导出/同步/扫描等分钟级任务
