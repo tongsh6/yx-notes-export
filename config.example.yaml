@@ -1,0 +1,6 @@
+auth:
+  mode: token
+  token: "YOUR_DEVELOPER_TOKEN"
+
+export:
+  output_dir: "./output"

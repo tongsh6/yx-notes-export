@@ -1,0 +1,8 @@
+{
+  "include": ["src", "tests", "main.py", "gui_main.py"],
+  "extraPaths": ["."],
+  "typeCheckingMode": "basic",
+  "reportMissingImports": false,
+  "reportOptionalMemberAccess": false,
+  "reportUninitializedInstanceVariable": false
+}
