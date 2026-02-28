@@ -1,9 +1,9 @@
-# Scripts
+# 脚本说明 (Scripts)
 
-## gui_regression.ps1
-Runs GUI-related regressions quickly.
+## `gui_regression.ps1`
+快速执行 GUI 相关回归测试。
 
-Usage:
+用法：
 
 ```powershell
 ./scripts/gui_regression.ps1
@@ -11,10 +11,10 @@ Usage:
 ./scripts/gui_regression.ps1 -Full
 ```
 
-## export_stall_report.py
-Summarizes stall/retry patterns from exporter JSONL logs.
+## `export_stall_report.py`
+汇总结构化日志中的卡顿/重试事件，辅助定位“看起来卡住”的原因。
 
-Usage:
+用法：
 
 ```powershell
 python scripts/export_stall_report.py
@@ -22,10 +22,10 @@ python scripts/export_stall_report.py --dir "C:\Users\<you>\AppData\Local\YxNote
 python scripts/export_stall_report.py --log "C:\path\export-xxx.jsonl"
 ```
 
-## ui_layout_audit.py
-Scans key GUI files for common layout risk patterns (fixed sizes, tiny min-height).
+## `ui_layout_audit.py`
+扫描 GUI 关键文件中的常见布局风险（固定尺寸、过小最小高度）。
 
-Usage:
+用法：
 
 ```powershell
 python scripts/ui_layout_audit.py
