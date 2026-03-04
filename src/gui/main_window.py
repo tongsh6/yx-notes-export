@@ -38,7 +38,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.auth import AuthConfig
-from src.event_log import NullEventLogger, create_export_logger, get_log_dir
+from src.event_log import NullEventLogger, create_export_logger
 from src.fetcher import NotebookInfo
 from src.gui import theme as _theme
 from src.gui.worker import ConnectWorker, ExportWorker
@@ -887,7 +887,17 @@ class MainWindow(QMainWindow):
     def _on_exp_finished_for(self, worker, ok: int, fail: int, skipped: int) -> None:
         if worker is not self._export_worker:
             return
-        self._on_exp_finished(ok, fail, skipped)
+        summary: Optional[dict[str, object]] = None
+        get_summary = getattr(worker, "get_summary", None)
+        if callable(get_summary):
+            summary_obj = get_summary()
+            if isinstance(summary_obj, dict):
+                normalized_summary: dict[str, object] = {}
+                for key, value in summary_obj.items():
+                    if isinstance(key, str):
+                        normalized_summary[key] = value
+                summary = normalized_summary
+        self._on_exp_finished(ok, fail, skipped, summary)
 
     def _on_exp_error_for(self, worker, msg: str) -> None:
         if worker is not self._export_worker:
@@ -989,7 +999,13 @@ class MainWindow(QMainWindow):
         if not ok:
             self._failed_items.append((str(guid), str(title), str(err)))
 
-    def _on_exp_finished(self, ok: int, fail: int, skipped: int) -> None:
+    def _on_exp_finished(
+        self,
+        ok: int,
+        fail: int,
+        skipped: int,
+        summary: Optional[dict[str, object]] = None,
+    ) -> None:
         self._stop_export_watchdog()
         self._export_worker = None
         self._progress.setRange(0, 100)
@@ -1016,6 +1032,30 @@ class MainWindow(QMainWindow):
                 f"\n导出完成 ✓  成功 {ok} 条  失败 {fail} 条  跳过 {skipped} 条"
             )
         self._stop_requested = False
+        retries_total = 0
+        elapsed_sec = 0.0
+        if isinstance(summary, dict):
+            retries_total = _to_int(summary.get("retries_total"), default=0)
+            elapsed_sec = _to_float(summary.get("elapsed_sec"), default=0.0)
+            avg_sec = _to_float(summary.get("avg_sec_per_note"), default=0.0)
+            self._append_log(
+                f"导出摘要：用时 {elapsed_sec:.1f}s，平均 {avg_sec:.2f}s/条，重试 {retries_total} 次"
+            )
+            top = summary.get("failure_reasons_top")
+            if isinstance(top, list) and top:
+                brief = []
+                for item in top[:3]:
+                    if not isinstance(item, dict):
+                        continue
+                    reason = str(item.get("reason", "unknown"))
+                    count = _to_int(item.get("count"), default=0)
+                    brief.append(f"{reason} x{count}")
+                if brief:
+                    self._append_log("失败原因 Top: " + " | ".join(brief))
+            if retries_total > 0 and not stopped:
+                self._lbl_status.setText(
+                    f"完成：成功 {ok} 条，失败 {fail} 条，跳过 {skipped} 条，重试 {retries_total} 次"
+                )
         if self._skipped_titles:
             self._append_log("\n跳过清单：")
             for title in self._skipped_titles[:50]:
@@ -1038,6 +1078,8 @@ class MainWindow(QMainWindow):
             failed=fail,
             skipped=skipped,
             stopped=stopped,
+            retries_total=retries_total,
+            elapsed_sec=elapsed_sec,
         )
 
     def _on_exp_error(self, msg: str) -> None:
@@ -1151,3 +1193,31 @@ class MainWindow(QMainWindow):
 def _default_output_dir() -> str:
     downloads = os.path.join(os.path.expanduser("~"), "Downloads")
     return downloads if os.path.exists(downloads) else "./output"
+
+
+def _to_int(value: object, default: int = 0) -> int:
+    if isinstance(value, bool):
+        return int(value)
+    if isinstance(value, int):
+        return value
+    if isinstance(value, float):
+        return int(value)
+    if isinstance(value, str):
+        try:
+            return int(value)
+        except ValueError:
+            return default
+    return default
+
+
+def _to_float(value: object, default: float = 0.0) -> float:
+    if isinstance(value, bool):
+        return float(value)
+    if isinstance(value, (int, float)):
+        return float(value)
+    if isinstance(value, str):
+        try:
+            return float(value)
+        except ValueError:
+            return default
+    return default
