@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.2.5] - 2026-03-04
+
+### Improved
+- 文档一致性修订：统一 Python 命令风格（`python3` / Windows 使用 `py -3`）
+- 架构文档补齐发布自动化、summary/失败记录契约、contract tests 覆盖说明
+- GitFlow 文档补充自动化发布触发与校验门禁
+- README 与 scripts 文档补全测试触发条件和平台命令示例
+
 ## [0.2.4] - 2026-03-04
 
 ### Added
