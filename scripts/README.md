@@ -29,9 +29,9 @@
 
 ```text
 # Windows (PowerShell)
-python scripts/export_stall_report.py
-python scripts/export_stall_report.py --dir "C:\Users\<you>\AppData\Local\YxNotesExport\Logs"
-python scripts/export_stall_report.py --log "C:\path\export-xxx.jsonl"
+py -3 scripts/export_stall_report.py
+py -3 scripts/export_stall_report.py --dir "C:\Users\<you>\AppData\Local\YxNotesExport\Logs"
+py -3 scripts/export_stall_report.py --log "C:\path\export-xxx.jsonl"
 
 # macOS/Linux (bash)
 python3 scripts/export_stall_report.py
@@ -46,7 +46,7 @@ python3 scripts/export_stall_report.py --log "/path/export-xxx.jsonl"
 
 ```text
 # Windows (PowerShell)
-python scripts/ui_layout_audit.py
+py -3 scripts/ui_layout_audit.py
 
 # macOS/Linux (bash)
 python3 scripts/ui_layout_audit.py
@@ -59,7 +59,7 @@ python3 scripts/ui_layout_audit.py
 
 ```text
 # 当前目录扫描
-python scripts/export_summary_trend.py
+python3 scripts/export_summary_trend.py
 
 # 指定目录（递归）
 python scripts/export_summary_trend.py --dir ./output --recursive
