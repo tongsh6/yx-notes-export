@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.2.3] - 2026-03-04
+
+### Added
+- CI 工作流：新增 GitHub Actions 自动测试（PR/push 跑离线测试，手动/定时触发 real API 测试）
+- 新增导出摘要能力：CLI/GUI 输出关键指标（耗时、平均每条耗时、重试次数、失败原因 Top）
+- CLI 新增 `--summary-json` 参数，可将导出摘要写入 JSON 文件
+- 新增 `scripts/gui_regression.sh`，支持 macOS/Linux 一键回归
+
+### Improved
+- 测试分层：引入 `real_api` marker，离线测试与真实 API 测试执行路径更清晰
+- 文档跨平台化：README 与 scripts/README 补充 Windows/macOS/Linux 对照命令
+
 ## [0.2.2] - 2026-03-03
 
 ## [0.2.1] - 2026-03-03
