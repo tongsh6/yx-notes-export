@@ -110,25 +110,28 @@ export:
 - 可选生成 `export-failures.txt` 记录失败条目与错误信息
 
 ## 测试与验证
-- 离线/GUI mock：`python -m pytest`
-- 真实 API：设置 `YX_TOKEN` 后运行 `python -m pytest tests/test_e2e_real_api.py tests/test_gui_e2e_real_api.py -q`
+- 离线/GUI mock：`python3 -m pytest -m "not real_api"`
+- 真实 API：设置 `YX_TOKEN` 后运行 `python3 -m pytest -m real_api -q`
 
 ## 测试执行指南
 ### 1) 离线单元测试 + GUI mock e2e
 ```
-python -m pytest
+python3 -m pytest -m "not real_api"
 ```
 
 ### 2) 真实 API 端到端（CLI + GUI）
 ```
 # Windows (cmd)
 set YX_TOKEN=你的token
-python -m pytest tests/test_e2e_real_api.py tests/test_gui_e2e_real_api.py -q
+python -m pytest -m real_api -q
+
+# macOS/Linux (bash)
+YX_TOKEN="你的token" python3 -m pytest -m real_api -q
 ```
 
 ### 3) 生成 GUI 测试截图（可选）
 ```
 # 仅在需要时输出截图
 set YX_SCREENSHOT=1
-python -m pytest tests/test_gui_e2e.py -q
+python -m pytest -m "not real_api" tests/test_gui_e2e.py -q
 ```

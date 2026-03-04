@@ -2,6 +2,37 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+## [0.2.3] - 2026-03-04
+
+### Added
+- CI 工作流：新增 GitHub Actions 自动测试（PR/push 跑离线测试，手动/定时触发 real API 测试）
+- 新增导出摘要能力：CLI/GUI 输出关键指标（耗时、平均每条耗时、重试次数、失败原因 Top）
+- CLI 新增 `--summary-json` 参数，可将导出摘要写入 JSON 文件
+- 新增 `scripts/gui_regression.sh`，支持 macOS/Linux 一键回归
+
+### Improved
+- 测试分层：引入 `real_api` marker，离线测试与真实 API 测试执行路径更清晰
+- 文档跨平台化：README 与 scripts/README 补充 Windows/macOS/Linux 对照命令
+
+## [0.2.2] - 2026-03-03
+
+## [0.2.1] - 2026-03-03
+
+## [0.2.0] - 2026-03-03
+
+### Added
+- **增量导出**：仅导出上次导出后新增或已修改的笔记
+  - CLI：`--incremental`（依赖本地 `.export-index.json`，隐含断点续传）
+  - GUI：选项「仅增量（只导出新增/已修改）」勾选后过滤笔记列表再导出
+- 应用图标：主窗口与 Windows 任务栏使用自定义图标（`src/gui/app_icon.svg`），并设置 AppUserModelID 以区分 Python 进程
+
+### Improved
+- GUI 勾选可见度：深色/浅色主题下 QCheckBox 显式样式，选中态增加白色对勾图标
+- GUI 布局：左侧操作区加宽、右侧日志区收窄（splitter 初始 520/540）；导出选项三个勾选改为竖排、左侧内容区最大宽度放宽，避免文案截断
+- 右侧日志面板设置最小宽度 380px，避免拖拽过窄
+
 ## [0.1.0] - 2026-02-28
 
 ### Added

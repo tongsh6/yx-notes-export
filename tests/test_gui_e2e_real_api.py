@@ -12,6 +12,7 @@ from src.gui import main_window
     not os.environ.get("YX_TOKEN"),
     reason="Requires YX_TOKEN environment variable",
 )
+@pytest.mark.real_api
 def test_gui_flow_real_api(qapp, qtbot, tmp_path):
     token = os.environ.get("YX_TOKEN")
     client = build_client(AuthConfig(mode="token", token=token))
