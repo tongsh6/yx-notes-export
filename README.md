@@ -33,6 +33,7 @@ python gui_main.py
 python main.py --all --output ./output
 python main.py --notebook "Notebook Name" --output ./output
 python main.py --note "NOTE_GUID" --output ./output
+python main.py --all --output ./output --summary-json ./output/export-summary.json
 ```
 
 ## 配置
@@ -52,8 +53,17 @@ cp config.example.yaml config.yaml
 ## 测试
 
 ```bash
-python -m pytest -q
+# 离线测试（默认，不依赖 YX_TOKEN）
+python3 -m pytest -m "not real_api" -q
+
+# 真实 API 测试（需要 YX_TOKEN）
+YX_TOKEN="your-token" python3 -m pytest -m real_api -q
 ```
+
+CI 工作流：`.github/workflows/tests.yml`
+
+- PR / push（main, develop）自动运行离线测试
+- `workflow_dispatch` / 每周定时任务运行 real API 测试
 
 ## 项目结构
 

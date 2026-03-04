@@ -14,6 +14,7 @@ from src.auth import AuthConfig, build_client, build_client_with_token
 from src.event_log import NullEventLogger
 from src.exporter import Exporter
 from src.fetcher import Fetcher, NotebookInfo
+from src.summary import build_export_summary
 
 
 class ConnectWorker(QThread):
@@ -84,6 +85,10 @@ class ExportWorker(QThread):
         self._event_logger = event_logger or NullEventLogger()
         self._last_activity_msg = ""
         self._last_activity_ts = 0.0
+        self._retry_total = 0
+        self._retry_by_reason: dict[str, int] = {}
+        self._failed_errors: list[str] = []
+        self._run_summary: dict[str, object] = {}
 
     def abort(self) -> None:
         self._abort = True
@@ -98,6 +103,7 @@ class ExportWorker(QThread):
         return self._abort or self._skip_current or self.isInterruptionRequested()
 
     def run(self) -> None:
+        started_at = monotonic()
         try:
             client = build_client(self._auth_cfg)
         except Exception as e:
@@ -141,6 +147,7 @@ class ExportWorker(QThread):
                     self._skip_current = False
                     metas = list(fetcher.iter_notes(note_guid=guid))
                     if not metas:
+                        self._failed_errors.append("失败记录中 GUID 无法找到")
                         self._event_logger.emit(
                             "note.failed",
                             level="ERROR",
@@ -219,8 +226,23 @@ class ExportWorker(QThread):
             failed=fail,
             skipped=skipped,
             aborted=self._abort,
+            retries_total=self._retry_total,
+        )
+        self._run_summary = build_export_summary(
+            success=ok,
+            failed=fail,
+            skipped=skipped,
+            elapsed_sec=monotonic() - started_at,
+            retries_total=self._retry_total,
+            retries_by_reason=self._retry_by_reason,
+            failed_errors=self._failed_errors,
+            output_dir=self._output_dir,
+            stopped=self._abort,
         )
         self.export_done.emit(ok, fail, skipped)
+
+    def get_summary(self) -> dict[str, object]:
+        return dict(self._run_summary)
 
     def _on_fetch_status(
         self, event: str, api_name: str, data: dict[str, object]
@@ -231,6 +253,11 @@ class ExportWorker(QThread):
             self._emit_activity(f"网络请求：{api_name}…")
             return
         if event == "api_wait_retry":
+            self._retry_total += 1
+            reason_key = str(data.get("reason", "unknown"))
+            self._retry_by_reason[reason_key] = (
+                self._retry_by_reason.get(reason_key, 0) + 1
+            )
             wait_raw = data.get("wait_sec", 0.0)
             wait_sec = float(wait_raw) if isinstance(wait_raw, (int, float)) else 0.0
             reason = str(data.get("reason", ""))
@@ -303,6 +330,7 @@ class ExportWorker(QThread):
             self._abort = True
             return ok, fail, skipped
         except Exception as e:
+            self._failed_errors.append(str(e))
             self._event_logger.emit(
                 "note.failed",
                 level="ERROR",

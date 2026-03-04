@@ -11,8 +11,10 @@
 
 from __future__ import annotations
 
+import json
 import os
 import sys
+from time import monotonic
 from typing import Optional
 
 import click
@@ -23,6 +25,7 @@ from src.auth import AuthConfig, build_client
 from src.event_log import NullEventLogger, create_export_logger, get_log_dir
 from src.exporter import Exporter
 from src.fetcher import Fetcher, NotebookInfo
+from src.summary import build_export_summary, format_summary_lines
 
 
 # ── CLI 定义 ─────────────────────────────────────────────────────────────────
@@ -69,6 +72,13 @@ from src.fetcher import Fetcher, NotebookInfo
     metavar="FILE",
     help="仅重导失败记录文件中的 GUID（export-failures.txt）",
 )
+@click.option(
+    "--summary-json",
+    "summary_json",
+    default=None,
+    metavar="FILE",
+    help="可选：将导出摘要写入 JSON 文件",
+)
 def main(
     config: str,
     export_all: bool,
@@ -78,6 +88,7 @@ def main(
     resume: bool,
     fail_log: bool,
     only_failed_log: Optional[str],
+    summary_json: Optional[str],
 ) -> None:
     """印象笔记批量导出工具 — 按层级结构导出为 Markdown"""
 
@@ -117,8 +128,19 @@ def main(
     click.echo("认证成功 ✓")
     event_logger.emit("auth.ok", mode=auth_cfg.mode)
 
-    fetcher = Fetcher(client, event_logger=event_logger)
+    retry_summary = {"total": 0, "by_reason": {}}
+
+    def _on_fetch_status(event: str, _api_name: str, data: dict[str, object]) -> None:
+        if event != "api_wait_retry":
+            return
+        retry_summary["total"] += 1
+        reason = str(data.get("reason", "unknown"))
+        by_reason = retry_summary["by_reason"]
+        by_reason[reason] = int(by_reason.get(reason, 0)) + 1
+
+    fetcher = Fetcher(client, status_cb=_on_fetch_status, event_logger=event_logger)
     exporter = Exporter(fetcher, resolved_output, resume=resume)
+    session_started = monotonic()
 
     # ── 4. 构建笔记本索引 ────────────────────────────────────────────────────
     click.echo("正在获取笔记本列表 …")
@@ -245,6 +267,27 @@ def main(
         failed=total_fail,
         skipped=total_skip,
     )
+    summary = build_export_summary(
+        success=total_ok,
+        failed=total_fail,
+        skipped=total_skip,
+        elapsed_sec=monotonic() - session_started,
+        retries_total=int(retry_summary["total"]),
+        retries_by_reason=dict(retry_summary["by_reason"]),
+        failed_errors=[err for _guid, _title, err in failed_items],
+        output_dir=os.path.abspath(resolved_output),
+        stopped=False,
+    )
+    for line in format_summary_lines(summary):
+        click.echo(line)
+    if summary_json:
+        summary_path = os.path.abspath(summary_json)
+        parent = os.path.dirname(summary_path)
+        if parent:
+            os.makedirs(parent, exist_ok=True)
+        with open(summary_path, "w", encoding="utf-8") as f:
+            json.dump(summary, f, ensure_ascii=False, indent=2)
+        click.echo(f"摘要文件：{summary_path}")
     click.echo(f"输出目录：{os.path.abspath(resolved_output)}")
     if fail_log and failed_items:
         path = os.path.join(resolved_output, "export-failures.txt")
