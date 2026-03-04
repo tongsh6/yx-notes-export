@@ -107,7 +107,24 @@ export:
 - 每个笔记本目录生成 `.export-index.json`，记录 guid + updated + 路径
 - 若 guid 已存在且 updated 未变化，则跳过导出并计入跳过数
 - GUI 端导出完成会输出“跳过清单”（最多展示 50 条）
-- 可选生成 `export-failures.txt` 记录失败条目与错误信息
+- 按需生成 `export-failures.txt`，格式为 `guid\ttitle\terror_code\terror_message`
+
+## 可观测性与导出契约
+- 默认写入 `export-summary.json`（CLI/GUI 均会在输出目录落盘）
+- `--summary-json` 可覆盖 CLI 默认摘要输出路径
+- 摘要包含核心字段：`success/failed/skipped/processed/elapsed_sec/avg_sec_per_note/retries_total/retries_by_reason/failure_reasons_top/failure_codes_top/output_dir/stopped`
+- 失败分类使用稳定 `error_code`（如 `rate_limit`、`network_timeout`、`auth_failed`、`resource_fetch_failed`）
+
+## 契约测试覆盖
+- `tests/test_contract_artifacts.py`：校验 `export-summary.json` schema、`export-failures.txt` 四列格式、CLI `--summary-json` 行为
+- `tests/test_error_codes.py`：校验错误消息到 `error_code` 的映射
+- `tests/test_summary.py` / `tests/test_summary_trend.py`：校验摘要写入与趋势聚合
+
+## 发布自动化
+- 发布工作流：`.github/workflows/release.yml`
+- 触发方式：tag push（`vX.Y.Z`）与 `workflow_dispatch`
+- 发布前校验：`VERSION` 与 tag 一致、`CHANGELOG.md` 存在对应版本段落
+- 通过后自动创建/更新 GitHub Release（正文来自 changelog 对应版本）
 
 ## 测试与验证
 - 离线/GUI mock：`python3 -m pytest -m "not real_api"`
@@ -123,7 +140,7 @@ python3 -m pytest -m "not real_api"
 ```
 # Windows (cmd)
 set YX_TOKEN=你的token
-python -m pytest -m real_api -q
+py -3 -m pytest -m real_api -q
 
 # macOS/Linux (bash)
 YX_TOKEN="你的token" python3 -m pytest -m real_api -q
@@ -131,7 +148,10 @@ YX_TOKEN="你的token" python3 -m pytest -m real_api -q
 
 ### 3) 生成 GUI 测试截图（可选）
 ```
-# 仅在需要时输出截图
+# Windows (cmd)
 set YX_SCREENSHOT=1
-python -m pytest -m "not real_api" tests/test_gui_e2e.py -q
+py -3 -m pytest -m "not real_api" tests/test_gui_e2e.py -q
+
+# macOS/Linux (bash)
+YX_SCREENSHOT=1 python3 -m pytest -m "not real_api" tests/test_gui_e2e.py -q
 ```
