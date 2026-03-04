@@ -17,7 +17,17 @@
 2. 在 release 分支完成版本号、变更说明、回归验证
 3. 将 release 合并到 `main` 并打 tag `vX.Y.Z`
 4. 将 `main` 回合并到 `develop`，保持分支一致
-5. 推送 `main/develop` 与 tag，创建 GitHub Release
+5. 推送 `main/develop` 与 tag，触发发布自动化
+
+## 发布自动化
+- 工作流：`.github/workflows/release.yml`
+- 触发：
+  - 推送 tag（`vX.Y.Z`）
+  - `workflow_dispatch` 手动触发并指定 tag
+- 校验：
+  - `VERSION` 与 tag 一致
+  - `CHANGELOG.md` 存在 `## [X.Y.Z] - YYYY-MM-DD` 版本段落
+- 输出：自动创建/更新 GitHub Release（正文取自对应 changelog 段落）
 
 ## 禁止项
 - 禁止直接在 `main` 做日常功能开发

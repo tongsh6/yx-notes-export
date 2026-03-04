@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.2.5] - 2026-03-04
+
+### Improved
+- 文档一致性修订：统一 Python 命令风格（`python3` / Windows 使用 `py -3`）
+- 架构文档补齐发布自动化、summary/失败记录契约、contract tests 覆盖说明
+- GitFlow 文档补充自动化发布触发与校验门禁
+- README 与 scripts 文档补全测试触发条件和平台命令示例
+
 ## [0.2.4] - 2026-03-04
 
 ### Added
@@ -35,9 +43,9 @@ All notable changes to this project will be documented in this file.
 ## [0.2.0] - 2026-03-03
 
 ### Added
-- **增量导出**：仅导出上次导出后新增或已修改的笔记
-  - CLI：`--incremental`（依赖本地 `.export-index.json`，隐含断点续传）
-  - GUI：选项「仅增量（只导出新增/已修改）」勾选后过滤笔记列表再导出
+- **断点续传能力**：仅导出上次导出后新增或已修改的笔记
+  - CLI：`--resume`（依赖本地 `.export-index.json`）
+  - GUI：默认启用“断点续传（跳过已导出且未更新的笔记）”
 - 应用图标：主窗口与 Windows 任务栏使用自定义图标（`src/gui/app_icon.svg`），并设置 AppUserModelID 以区分 Python 进程
 
 ### Improved

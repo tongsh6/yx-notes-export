@@ -12,9 +12,9 @@ Project:
 
 Quick Commands:
 - build: N/A
-- test: pytest
-- run (CLI): python main.py [--notebook NAME] [--note GUID] [--all] --output ./output
-- run (GUI): python gui_main.py
+- test: python3 -m pytest
+- run (CLI): python3 main.py [--notebook NAME] [--note GUID] [--all] --output ./output
+- run (GUI): python3 gui_main.py
 
 Context Entry:
 - context/INDEX.md

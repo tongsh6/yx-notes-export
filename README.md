@@ -16,24 +16,26 @@
 - 安装依赖：
 
 ```bash
-python -m pip install -r requirements.txt
+python3 -m pip install -r requirements.txt
 ```
+
+Windows 可使用等价命令：`py -3 -m pip install -r requirements.txt`。
 
 ## 快速开始
 
 ### GUI 模式
 
 ```bash
-python gui_main.py
+python3 gui_main.py
 ```
 
 ### CLI 模式
 
 ```bash
-python main.py --all --output ./output
-python main.py --notebook "Notebook Name" --output ./output
-python main.py --note "NOTE_GUID" --output ./output
-python main.py --all --output ./output --summary-json ./output/export-summary.json
+python3 main.py --all --output ./output
+python3 main.py --notebook "Notebook Name" --output ./output
+python3 main.py --note "NOTE_GUID" --output ./output
+python3 main.py --all --output ./output --summary-json ./output/export-summary.json
 ```
 
 默认会在输出目录生成摘要文件：`export-summary.json`。
@@ -68,7 +70,8 @@ YX_TOKEN="your-token" python3 -m pytest -m real_api -q
 CI 工作流：`.github/workflows/tests.yml`
 
 - PR / push（main, develop）自动运行离线测试
-- `workflow_dispatch` / 每周定时任务运行 real API 测试
+- 每周定时任务（schedule）运行 real API 测试
+- `workflow_dispatch` 手动运行 real API 测试
 - `workflow_dispatch` 支持 `real_api_target=all|cli|gui`，可按子集触发 real API 回归
 
 ## 项目结构
