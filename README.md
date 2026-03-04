@@ -40,7 +40,11 @@ python main.py --note "NOTE_GUID" --output ./output
 复制配置模板并填写认证信息：
 
 ```bash
+# Windows (CMD)
 copy config.example.yaml config.yaml
+
+# macOS/Linux
+cp config.example.yaml config.yaml
 ```
 
 > `config.yaml` 可能包含私密 token，请勿提交到 Git 仓库。
