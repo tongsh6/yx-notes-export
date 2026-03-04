@@ -7,6 +7,16 @@ on:
       - main
       - develop
   workflow_dispatch:
+    inputs:
+      real_api_target:
+        description: "real API test target"
+        required: true
+        default: all
+        type: choice
+        options:
+          - all
+          - cli
+          - gui
   schedule:
     - cron: "0 2 * * 1"
 
@@ -62,5 +72,35 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -r requirements.txt
 
+      - name: Resolve real API target
+        id: real_api_target
+        run: |
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            TARGET="all"
+          else
+            TARGET="${{ github.event.inputs.real_api_target }}"
+          fi
+          case "$TARGET" in
+            all)
+              CMD='python -m pytest -m real_api -q'
+              ;;
+            cli)
+              CMD='python -m pytest tests/test_e2e_real_api.py -m real_api -q'
+              ;;
+            gui)
+              CMD='python -m pytest tests/test_gui_e2e_real_api.py -m real_api -q'
+              ;;
+            *)
+              echo "Unsupported real_api target: $TARGET" >&2
+              exit 1
+              ;;
+          esac
+          echo "target=$TARGET" >> "$GITHUB_OUTPUT"
+          echo "cmd=$CMD" >> "$GITHUB_OUTPUT"
+
+      - name: Print selected real API target
+        run: |
+          echo "real_api target: ${{ steps.real_api_target.outputs.target }}"
+
       - name: Run real API tests
-        run: python -m pytest -m real_api -q
+        run: ${{ steps.real_api_target.outputs.cmd }}

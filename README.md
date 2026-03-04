@@ -36,6 +36,11 @@ python main.py --note "NOTE_GUID" --output ./output
 python main.py --all --output ./output --summary-json ./output/export-summary.json
 ```
 
+默认会在输出目录生成摘要文件：`export-summary.json`。
+
+失败记录文件 `export-failures.txt` 包含四列：`guid\ttitle\terror_code\terror_message`。
+摘要中的失败 Top 同时按 `reason` 与 `error_code` 聚合。
+
 ## 配置
 
 复制配置模板并填写认证信息：
@@ -64,6 +69,7 @@ CI 工作流：`.github/workflows/tests.yml`
 
 - PR / push（main, develop）自动运行离线测试
 - `workflow_dispatch` / 每周定时任务运行 real API 测试
+- `workflow_dispatch` 支持 `real_api_target=all|cli|gui`，可按子集触发 real API 回归
 
 ## 项目结构
 
@@ -77,6 +83,17 @@ CI 工作流：`.github/workflows/tests.yml`
 
 - 本项目采用 GitFlow：`main`（发布）、`develop`（日常集成）
 - 详细约定见 `context/tech/GITFLOW_WORKFLOW.md`
+
+## 发布流程
+
+- 发布工作流：`.github/workflows/release.yml`
+- 支持两种触发：
+  - 推送 tag（格式 `vX.Y.Z`）
+  - `workflow_dispatch` 手动触发并指定 tag
+- 发布前会自动校验：
+  - `VERSION` 与 tag 版本一致
+  - `CHANGELOG.md` 包含对应版本段落（`## [X.Y.Z] - YYYY-MM-DD`）
+- 校验通过后自动创建/更新 GitHub Release（内容来自 `CHANGELOG.md` 对应版本段落）
 
 ## Language Policy
 

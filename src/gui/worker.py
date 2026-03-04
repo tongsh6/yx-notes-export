@@ -11,6 +11,7 @@ from typing import Any, List, Optional
 from PySide6.QtCore import QThread, Signal
 
 from src.auth import AuthConfig, build_client, build_client_with_token
+from src.error_codes import classify_export_error
 from src.event_log import NullEventLogger
 from src.exporter import Exporter
 from src.fetcher import Fetcher, NotebookInfo
@@ -88,6 +89,7 @@ class ExportWorker(QThread):
         self._retry_total = 0
         self._retry_by_reason: dict[str, int] = {}
         self._failed_errors: list[str] = []
+        self._failed_error_codes: list[str] = []
         self._run_summary: dict[str, object] = {}
 
     def abort(self) -> None:
@@ -147,7 +149,9 @@ class ExportWorker(QThread):
                     self._skip_current = False
                     metas = list(fetcher.iter_notes(note_guid=guid))
                     if not metas:
-                        self._failed_errors.append("失败记录中 GUID 无法找到")
+                        err = "失败记录中 GUID 无法找到"
+                        self._failed_errors.append(err)
+                        self._failed_error_codes.append(classify_export_error(err))
                         self._event_logger.emit(
                             "note.failed",
                             level="ERROR",
@@ -236,6 +240,7 @@ class ExportWorker(QThread):
             retries_total=self._retry_total,
             retries_by_reason=self._retry_by_reason,
             failed_errors=self._failed_errors,
+            failed_error_codes=self._failed_error_codes,
             output_dir=self._output_dir,
             stopped=self._abort,
         )
@@ -330,16 +335,20 @@ class ExportWorker(QThread):
             self._abort = True
             return ok, fail, skipped
         except Exception as e:
-            self._failed_errors.append(str(e))
+            err = str(e)
+            error_code = classify_export_error(err)
+            self._failed_errors.append(err)
+            self._failed_error_codes.append(error_code)
             self._event_logger.emit(
                 "note.failed",
                 level="ERROR",
                 note_guid=meta.guid,
                 note_title=meta.title,
                 notebook_guid=meta.notebook_guid,
-                error=str(e),
+                error=err,
+                error_code=error_code,
             )
-            self.note_done.emit(meta.guid, meta.title, False, str(e))
+            self.note_done.emit(meta.guid, meta.title, False, err)
             return ok, fail + 1, skipped
 
 
