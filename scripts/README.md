@@ -51,3 +51,19 @@ python scripts/ui_layout_audit.py
 # macOS/Linux (bash)
 python3 scripts/ui_layout_audit.py
 ```
+
+## `export_summary_trend.py`
+聚合多次导出的 `export-summary.json`，输出成功率/失败率/耗时趋势。
+
+用法：
+
+```text
+# 当前目录扫描
+python scripts/export_summary_trend.py
+
+# 指定目录（递归）
+python scripts/export_summary_trend.py --dir ./output --recursive
+
+# 指定匹配模式
+python scripts/export_summary_trend.py --dir ./artifacts --pattern "*summary*.json" --recursive
+```

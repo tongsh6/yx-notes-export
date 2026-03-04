@@ -1,0 +1,93 @@
+name: release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag, e.g. v0.2.3"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve tag
+        id: vars
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TAG="${{ github.event.inputs.tag }}"
+          else
+            TAG="${{ github.ref_name }}"
+          fi
+          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Invalid tag format: $TAG" >&2
+            exit 1
+          fi
+          VERSION="${TAG#v}"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Validate VERSION
+        run: |
+          FILE_VERSION="$(tr -d '[:space:]' < VERSION)"
+          if [ "$FILE_VERSION" != "${{ steps.vars.outputs.version }}" ]; then
+            echo "VERSION mismatch: VERSION=$FILE_VERSION, tag=${{ steps.vars.outputs.tag }}" >&2
+            exit 1
+          fi
+
+      - name: Validate changelog has release section
+        run: |
+          VERSION="${{ steps.vars.outputs.version }}"
+          if ! grep -Eq "^## \[$VERSION\] - [0-9]{4}-[0-9]{2}-[0-9]{2}$" CHANGELOG.md; then
+            echo "CHANGELOG.md missing section header for $VERSION" >&2
+            exit 1
+          fi
+
+      - name: Extract release notes from changelog
+        run: |
+          python3 - <<'PY'
+          import re
+          from pathlib import Path
+
+          changelog = Path("CHANGELOG.md").read_text(encoding="utf-8")
+          version = "${{ steps.vars.outputs.version }}"
+          pattern = re.compile(rf"^## \[{re.escape(version)}\] - .*?$", re.MULTILINE)
+          m = pattern.search(changelog)
+          if not m:
+              raise SystemExit(f"Missing changelog header for {version}")
+          start = m.end()
+          next_header = re.search(r"^## \[", changelog[start:], re.MULTILINE)
+          end = start + next_header.start() if next_header else len(changelog)
+          body = changelog[start:end].strip()
+          if not body:
+              raise SystemExit(f"Empty changelog section for {version}")
+          Path("release-notes.md").write_text(body + "\n", encoding="utf-8")
+          PY
+
+      - name: Ensure tag exists for manual release
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        run: |
+          if ! git rev-parse "${{ steps.vars.outputs.tag }}" >/dev/null 2>&1; then
+            echo "Tag ${{ steps.vars.outputs.tag }} does not exist in repository" >&2
+            exit 1
+          fi
+
+      - name: Create or update GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.vars.outputs.tag }}
+          name: ${{ steps.vars.outputs.tag }}
+          body_path: release-notes.md
+          make_latest: true

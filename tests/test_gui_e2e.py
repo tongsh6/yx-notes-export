@@ -34,6 +34,21 @@ class FakeExportWorker(QObject):
     def start(self) -> None:
         QTimer.singleShot(0, self._emit_step1)
 
+    def get_summary(self) -> dict[str, object]:
+        return {
+            "success": 0,
+            "failed": 1,
+            "skipped": 1,
+            "processed": 2,
+            "elapsed_sec": 1.2,
+            "avg_sec_per_note": 0.6,
+            "retries_total": 2,
+            "retries_by_reason": {"timeout": 2},
+            "failure_reasons_top": [{"reason": "fail", "count": 1}],
+            "output_dir": "",
+            "stopped": False,
+        }
+
     def abort(self) -> None:
         return None
 
@@ -148,6 +163,10 @@ def test_gui_flow_no_api(qapp, qtbot, tmp_path, monkeypatch, mode, screenshot_di
     assert fail_log.exists()
     content = fail_log.read_text(encoding="utf-8")
     assert "Note B" in content
+
+    summary_file = tmp_path / "export-summary.json"
+    assert summary_file.exists()
+    assert "retries_total" in summary_file.read_text(encoding="utf-8")
 
     # Screenshot on demand: use env var to avoid noisy output
     if os.environ.get("YX_SCREENSHOT"):

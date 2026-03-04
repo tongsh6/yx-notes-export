@@ -11,7 +11,6 @@
 
 from __future__ import annotations
 
-import json
 import os
 import sys
 from time import monotonic
@@ -22,10 +21,11 @@ import yaml
 from tqdm import tqdm
 
 from src.auth import AuthConfig, build_client
+from src.error_codes import classify_export_error
 from src.event_log import NullEventLogger, create_export_logger, get_log_dir
 from src.exporter import Exporter
 from src.fetcher import Fetcher, NotebookInfo
-from src.summary import build_export_summary, format_summary_lines
+from src.summary import build_export_summary, format_summary_lines, write_export_summary
 
 
 # ── CLI 定义 ─────────────────────────────────────────────────────────────────
@@ -77,7 +77,7 @@ from src.summary import build_export_summary, format_summary_lines
     "summary_json",
     default=None,
     metavar="FILE",
-    help="可选：将导出摘要写入 JSON 文件",
+    help="可选：自定义导出摘要 JSON 路径（默认输出到 output/export-summary.json）",
 )
 def main(
     config: str,
@@ -185,7 +185,7 @@ def main(
     total_ok = 0
     total_fail = 0
     total_skip = 0
-    failed_items: list[tuple[str, str, str]] = []
+    failed_items: list[tuple[str, str, str, str]] = []
     event_logger.emit(
         "session_start",
         output_dir=os.path.abspath(resolved_output),
@@ -274,26 +274,23 @@ def main(
         elapsed_sec=monotonic() - session_started,
         retries_total=int(retry_summary["total"]),
         retries_by_reason=dict(retry_summary["by_reason"]),
-        failed_errors=[err for _guid, _title, err in failed_items],
+        failed_errors=[err for _guid, _title, _code, err in failed_items],
+        failed_error_codes=[code for _guid, _title, code, _err in failed_items],
         output_dir=os.path.abspath(resolved_output),
         stopped=False,
     )
     for line in format_summary_lines(summary):
         click.echo(line)
-    if summary_json:
-        summary_path = os.path.abspath(summary_json)
-        parent = os.path.dirname(summary_path)
-        if parent:
-            os.makedirs(parent, exist_ok=True)
-        with open(summary_path, "w", encoding="utf-8") as f:
-            json.dump(summary, f, ensure_ascii=False, indent=2)
-        click.echo(f"摘要文件：{summary_path}")
+    summary_path = summary_json or os.path.join(resolved_output, "export-summary.json")
+    summary_path = write_export_summary(summary, summary_path)
+    click.echo(f"摘要文件：{summary_path}")
     click.echo(f"输出目录：{os.path.abspath(resolved_output)}")
     if fail_log and failed_items:
         path = os.path.join(resolved_output, "export-failures.txt")
+        os.makedirs(os.path.dirname(path), exist_ok=True)
         with open(path, "w", encoding="utf-8") as f:
-            for guid, title, err in failed_items:
-                f.write(f"{guid}\t{title}\t{err}\n")
+            for guid, title, error_code, err in failed_items:
+                f.write(f"{guid}\t{title}\t{error_code}\t{err}\n")
         click.echo(f"失败记录：{path}")
 
 
@@ -336,14 +333,17 @@ def _export_notes(
         except Exception as e:
             click.echo(f"\n  ✗ 《{meta.title}》导出失败：{e}", err=True)
             fail += 1
-            failed_items.append((meta.guid, meta.title, str(e)))
+            error_msg = str(e)
+            error_code = classify_export_error(error_msg)
+            failed_items.append((meta.guid, meta.title, error_code, error_msg))
             event_logger.emit(
                 "note.failed",
                 level="ERROR",
                 note_guid=meta.guid,
                 note_title=meta.title,
                 notebook_guid=meta.notebook_guid,
-                error=str(e),
+                error=error_msg,
+                error_code=error_code,
             )
     return ok, fail, skip
 
