@@ -38,10 +38,12 @@ from PySide6.QtWidgets import (
 )
 
 from src.auth import AuthConfig
+from src.error_codes import classify_export_error
 from src.event_log import NullEventLogger, create_export_logger
 from src.fetcher import NotebookInfo
 from src.gui import theme as _theme
 from src.gui.worker import ConnectWorker, ExportWorker
+from src.summary import write_export_summary
 
 _CONFIG_PATH = "config.yaml"
 
@@ -175,7 +177,7 @@ class MainWindow(QMainWindow):
         self._export_watchdog_timer.timeout.connect(self._on_export_watchdog_tick)
         self._session_token: Optional[str] = None  # 密码登录后从 API 获取的 token
         self._skipped_titles: List[str] = []
-        self._failed_items: List[tuple[str, str, str]] = []
+        self._failed_items: List[tuple[str, str, str, str]] = []
         self._stop_requested = False
         self._last_export_activity_at = 0.0
         self._last_export_activity_msg = ""
@@ -997,7 +999,9 @@ class MainWindow(QMainWindow):
         suffix = f"  [{err}]" if err else ""
         self._append_log(f"  {icon}  {title}{suffix}")
         if not ok:
-            self._failed_items.append((str(guid), str(title), str(err)))
+            error_msg = str(err)
+            error_code = classify_export_error(error_msg)
+            self._failed_items.append((str(guid), str(title), error_code, error_msg))
 
     def _on_exp_finished(
         self,
@@ -1056,6 +1060,13 @@ class MainWindow(QMainWindow):
                 self._lbl_status.setText(
                     f"完成：成功 {ok} 条，失败 {fail} 条，跳过 {skipped} 条，重试 {retries_total} 次"
                 )
+            try:
+                summary_path = write_export_summary(
+                    summary, os.path.join(output, "export-summary.json")
+                )
+                self._append_log(f"摘要文件：{summary_path}")
+            except Exception as e:
+                self._append_log(f"[警告] 写入导出摘要失败：{e}")
         if self._skipped_titles:
             self._append_log("\n跳过清单：")
             for title in self._skipped_titles[:50]:
@@ -1066,9 +1077,10 @@ class MainWindow(QMainWindow):
         if self._chk_fail_log.isChecked() and self._failed_items:
             path = os.path.join(output, "export-failures.txt")
             try:
+                os.makedirs(os.path.dirname(path), exist_ok=True)
                 with open(path, "w", encoding="utf-8") as f:
-                    for guid, title, err in self._failed_items:
-                        f.write(f"{guid}\t{title}\t{err}\n")
+                    for guid, title, error_code, err in self._failed_items:
+                        f.write(f"{guid}\t{title}\t{error_code}\t{err}\n")
                 self._append_log(f"失败记录：{path}")
             except Exception as e:
                 self._append_log(f"[警告] 写入失败记录失败：{e}")
