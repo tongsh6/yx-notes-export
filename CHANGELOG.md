@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.2.4] - 2026-03-04
+
+### Added
+- 发布自动化：新增 `release.yml`，支持 tag/手动触发发布，并在发布前校验 `VERSION` 与 `CHANGELOG` 一致性
+- 可观测性增强：默认写入 `export-summary.json`，并新增 summary 趋势聚合脚本 `scripts/export_summary_trend.py`
+- 错误分类标准化：新增稳定 `error_code` 映射并接入 CLI/GUI 导出失败路径
+- 契约测试：新增 summary schema、失败记录格式、CLI `--summary-json` 行为测试
+
+### Improved
+- real API 测试工作流支持 `workflow_dispatch` 子集选择：`all|cli|gui`
+- 失败记录输出统一为四列：`guid\ttitle\terror_code\terror_message`
+
 ## [0.2.3] - 2026-03-04
 
 ### Added
