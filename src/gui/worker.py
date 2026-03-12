@@ -61,6 +61,8 @@ class ExportWorker(QThread):
     activity = Signal(str)
     # 严重错误（认证失效等）
     error = Signal(str)
+    # 增量过滤结果（总条数, 需导出条数）
+    incremental_stats = Signal(int, int)
 
     def __init__(
         self,
@@ -71,6 +73,7 @@ class ExportWorker(QThread):
         failed_guids: Optional[List[str]],  # 仅导出失败记录（GUID 列表）
         all_notebooks: List[NotebookInfo],  # 账户全量笔记本（用于 guid→info 映射）
         resume: bool,
+        incremental: bool = False,
         event_logger: Any = None,
     ) -> None:
         super().__init__()
@@ -81,6 +84,7 @@ class ExportWorker(QThread):
         self._failed_guids = failed_guids or []
         self._all_notebooks = all_notebooks
         self._resume = resume
+        self._incremental = incremental
         self._abort = False
         self._skip_current = False
         self._event_logger = event_logger or NullEventLogger()
@@ -123,7 +127,8 @@ class ExportWorker(QThread):
                 if self._note_guid
                 else "scope"
             ),
-            resume=self._resume,
+            resume=resume_effective,
+            incremental=self._incremental,
         )
         fetcher = Fetcher(
             client,
@@ -131,7 +136,8 @@ class ExportWorker(QThread):
             status_cb=self._on_fetch_status,
             event_logger=self._event_logger,
         )
-        exporter = Exporter(fetcher, self._output_dir, resume=self._resume)
+        resume_effective = self._resume or self._incremental
+        exporter = Exporter(fetcher, self._output_dir, resume=resume_effective)
         nb_index = {nb.guid: nb for nb in self._all_notebooks}
         used_filenames: dict[str, set[str]] = {}
         ok = fail = skipped = 0
@@ -201,6 +207,17 @@ class ExportWorker(QThread):
                         if self._abort:
                             break
                         all_metas.append((meta, nb))
+                if self._incremental:
+                    total_before = len(all_metas)
+                    all_metas = [
+                        (m, n) for (m, n) in all_metas if exporter.should_export(m, n)
+                    ]
+                    self.incremental_stats.emit(total_before, len(all_metas))
+                    self._event_logger.emit(
+                        "export.incremental_filter",
+                        total_notes=total_before,
+                        to_export=len(all_metas),
+                    )
                 total = len(all_metas)
                 if self._abort:
                     self.export_done.emit(ok, fail, skipped)

@@ -28,18 +28,27 @@
 ```
 yx-notes-export/
 ├── main.py                  # CLI 入口（命令参数解析、主流程调度）
+├── gui_main.py              # GUI 入口（PySide6）
 ├── config.yaml              # 用户配置（Token/用户名密码、输出目录）
+├── VERSION                  # 当前版本号（发布脚本会更新）
+├── CHANGELOG.md              # 更新日志（发布脚本会归入新版本区块）
 ├── src/
 │   ├── auth.py              # 认证模块：加载 Token / 用户名密码，初始化 Client
 │   ├── fetcher.py           # 数据获取：笔记本列表、笔记列表、笔记内容、附件
 │   ├── converter.py         # 格式转换：ENML/HTML → Markdown
-│   ├── exporter.py          # 输出模块：目录创建、文件命名、内容写入
-│   └── utils.py             # 通用工具：安全文件名、去重、时间格式化
+│   ├── exporter.py          # 输出模块：目录创建、文件命名、内容写入；含增量过滤
+│   ├── event_log.py         # 结构化运行日志
+│   ├── utils.py             # 通用工具：安全文件名、去重、时间格式化
+│   └── gui/                 # 图形界面：main_window、worker、theme、图标与勾选资源
 ├── tests/
 │   ├── test_gui_e2e.py          # GUI 端到端（mock worker，不依赖 API）
 │   ├── test_gui_e2e_real_api.py # GUI 端到端（真实 API，需 YX_TOKEN）
 │   ├── test_e2e_real_api.py     # CLI 端到端（真实 API，需 YX_TOKEN）
 │   └── test_*.py
+├── scripts/
+│   ├── release_version.py   # 跨平台版本发布（VERSION/CHANGELOG + git tag + GitHub Release）
+│   ├── export_stall_report.py
+│   └── ...
 └── requirements.txt
 ```
 
@@ -106,6 +115,7 @@ export:
 ## 断点续传与失败记录
 - 每个笔记本目录生成 `.export-index.json`，记录 guid + updated + 路径
 - 若 guid 已存在且 updated 未变化，则跳过导出并计入跳过数
+- **增量导出**：启用时在拉取笔记列表后，用 `Exporter.filter_notes_to_export` / `should_export` 仅保留“新增或 updated 已变”的笔记再调用 `export_note`，减少 getNote 调用与进度条总量
 - GUI 端导出完成会输出“跳过清单”（最多展示 50 条）
 - 按需生成 `export-failures.txt`，格式为 `guid\ttitle\terror_code\terror_message`
 

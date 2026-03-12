@@ -1,4 +1,6 @@
-# 经验索引
+# 经验索引 (Experience)
+
+AIEF 的 **experience** 层：记录实现与使用中的问题与解决方案，便于复用、减少重复试错。
 
 ## 目的
 - 记录在实现与使用过程中遇到的问题与解决方案
@@ -19,3 +21,6 @@
 - 2026-02-27-session-retro-hang-stop.md
 - 2026-02-27-qthread-crash-and-lifecycle.md
 - 2026-02-28-session-retro-stall-ux-layout.md
+- 2026-03-03-qt-checkbox-and-windows-taskbar-icon.md
+- 2026-03-03-incremental-export-via-local-index.md
+- 2026-03-03-release-script-and-gh-release.md

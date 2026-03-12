@@ -4,7 +4,12 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 from PySide6.QtWidgets import QApplication
+
+# 勾选框选中态对勾图标路径（绝对路径、正斜杠，供 QSS image: url() 使用；Qt 在 Windows 下对 file:// 支持不稳定）
+_CHECK_ICON_PATH = str(Path(__file__).resolve().parent / "check_white.svg").replace("\\", "/")
 
 # ── 深色主题 ──────────────────────────────────────────────────────────────
 
@@ -110,6 +115,23 @@ QRadioButton::indicator:checked {
     background-color: #89b4fa;
     border-radius: 7px;
 }
+QCheckBox {
+    spacing: 6px;
+}
+QCheckBox::indicator {
+    width: 16px;
+    height: 16px;
+    border-radius: 3px;
+}
+QCheckBox::indicator:unchecked {
+    border: 1px solid #6c7086;
+    background-color: #313244;
+}
+QCheckBox::indicator:checked {
+    background-image: url(%s);
+    background-color: #89b4fa;
+    border: 1px solid #89b4fa;
+}
 QListWidget {
     background-color: #313244;
     border: 1px solid #45475a;
@@ -161,7 +183,7 @@ QLabel { background: transparent; }
 QSplitter::handle { background: #45475a; }
 QSplitter::handle:horizontal { width: 1px; }
 QSplitter::handle:horizontal:hover { background: #585b70; }
-"""
+""" % (_CHECK_ICON_PATH,)
 
 # ── 浅色主题 ──────────────────────────────────────────────────────────────
 
@@ -260,6 +282,23 @@ QRadioButton::indicator:checked {
     background-color: #1e66f5;
     border-radius: 7px;
 }
+QCheckBox {
+    spacing: 6px;
+}
+QCheckBox::indicator {
+    width: 16px;
+    height: 16px;
+    border-radius: 3px;
+}
+QCheckBox::indicator:unchecked {
+    border: 1px solid #9ca0b0;
+    background-color: #e6e9ef;
+}
+QCheckBox::indicator:checked {
+    background-image: url(%s);
+    background-color: #1e66f5;
+    border: 1px solid #1e66f5;
+}
 QListWidget {
     background-color: #ffffff;
     border: 1px solid #bcc0cc;
@@ -311,7 +350,7 @@ QLabel { background: transparent; }
 QSplitter::handle { background: #bcc0cc; }
 QSplitter::handle:horizontal { width: 1px; }
 QSplitter::handle:horizontal:hover { background: #a6adc8; }
-"""
+""" % (_CHECK_ICON_PATH,)
 
 
 def apply_dark(app: QApplication) -> None:

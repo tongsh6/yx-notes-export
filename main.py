@@ -60,6 +60,13 @@ from src.summary import build_export_summary, format_summary_lines, write_export
     help="断点续传（跳过已导出且未更新的笔记）",
 )
 @click.option(
+    "--incremental",
+    "incremental",
+    is_flag=True,
+    default=False,
+    help="增量导出：仅导出新增或已修改的笔记（依赖本地 .export-index.json，隐含 --resume）",
+)
+@click.option(
     "--fail-log/--no-fail-log",
     "fail_log",
     default=True,
@@ -86,6 +93,7 @@ def main(
     note_guid: Optional[str],
     output_dir: Optional[str],
     resume: bool,
+    incremental: bool,
     fail_log: bool,
     only_failed_log: Optional[str],
     summary_json: Optional[str],
@@ -139,7 +147,8 @@ def main(
         by_reason[reason] = int(by_reason.get(reason, 0)) + 1
 
     fetcher = Fetcher(client, status_cb=_on_fetch_status, event_logger=event_logger)
-    exporter = Exporter(fetcher, resolved_output, resume=resume)
+    resume_effective = resume or incremental
+    exporter = Exporter(fetcher, resolved_output, resume=resume_effective)
     session_started = monotonic()
 
     # ── 4. 构建笔记本索引 ────────────────────────────────────────────────────
@@ -189,7 +198,8 @@ def main(
     event_logger.emit(
         "session_start",
         output_dir=os.path.abspath(resolved_output),
-        resume=resume,
+        resume=resume_effective,
+        incremental=incremental,
         scope=(
             "failed"
             if bool(only_failed_log)
@@ -244,6 +254,10 @@ def main(
                     leave=False,
                 )
             )
+            if incremental:
+                to_export = exporter.filter_notes_to_export(note_metas, nb)
+                click.echo(f"    增量：共 {len(note_metas)} 条，需导出 {len(to_export)} 条")
+                note_metas = to_export
             ok, fail, skip = _export_notes(
                 note_metas,
                 nb_index,

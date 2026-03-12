@@ -13,19 +13,21 @@ Project:
 Quick Commands:
 - build: N/A
 - test: python3 -m pytest
-- run (CLI): python3 main.py [--notebook NAME] [--note GUID] [--all] --output ./output
+- run (CLI): python3 main.py [--notebook NAME] [--note GUID] [--all] [--incremental] --output ./output
 - run (GUI): python3 gui_main.py
+- release: python scripts/release_version.py --bump patch --push  # 需 gh 以创建 GitHub Release
 
 Context Entry:
 - context/INDEX.md
+- context/README.md  # AIEF 说明（上下文目录用途与结构）
 
-Knowledge Base:
+Knowledge Base（文档体系按 AIEF 组织，详见 context/README.md）：
 
 | Directory | Purpose | When to Load |
 |-----------|---------|-------------|
-| context/business/ | Business knowledge | Understanding requirements, domain models |
-| context/tech/ | Technical docs | Architecture, API, conventions |
-| context/experience/ | Experience library | Avoid repeating mistakes |
+| context/business/ | Business knowledge | Understanding requirements, domain models；入口 [business/README.md](context/business/README.md) |
+| context/tech/ | Technical docs | Architecture, API, conventions；入口 [tech/README.md](context/tech/README.md) |
+| context/experience/ | Experience library | Avoid repeating mistakes；入口 [experience/INDEX.md](context/experience/INDEX.md) |
 | workflow/ | Workflows | Complex task phase guides (optional) |
 | docs/standards/ | Standards | Skill/Command/Agent specs (L1, optional) |
 | docs/standards/patterns/ | Patterns | Phase routing, experience mgmt, context loading (L2, optional) |

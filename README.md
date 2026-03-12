@@ -5,8 +5,9 @@
 ## 功能特性
 
 - 支持全量导出、指定笔记本导出、指定 GUID 单条导出
+- **增量导出**：仅导出新增或已修改的笔记（CLI `--incremental` / GUI「仅增量」）
 - 尽量保留原始内容、标签、元数据与附件资源
-- 同时提供 GUI（`PySide6`）与 CLI 两种使用方式
+- 同时提供 GUI（`PySide6`）与 CLI 两种使用方式；GUI 支持深色/浅色主题与自定义窗口/任务栏图标
 - 内置重试、超时处理与结构化运行日志
 - 支持断点续传与失败条目重导
 
@@ -35,6 +36,7 @@ python3 gui_main.py
 python3 main.py --all --output ./output
 python3 main.py --notebook "Notebook Name" --output ./output
 python3 main.py --note "NOTE_GUID" --output ./output
+python3 main.py --all --incremental --output ./output   # 仅导出新增或已修改的笔记
 python3 main.py --all --output ./output --summary-json ./output/export-summary.json
 ```
 
@@ -77,10 +79,35 @@ CI 工作流：`.github/workflows/tests.yml`
 ## 项目结构
 
 - `src/` 核心实现
-- `src/gui/` 图形界面
+- `src/gui/` 图形界面（含主题与图标资源）
 - `tests/` 自动化测试
-- `context/` AIEF 上下文与经验沉淀
-- `scripts/` 回归与诊断脚本
+- `context/` AIEF 上下文（见下方「文档与上下文」）
+- `scripts/` 脚本：版本发布（`release_version.py`）、回归测试、卡顿诊断、布局检查等
+
+## 文档与上下文（AIEF）
+
+项目文档按 **AIEF**（AI 辅助工程上下文）组织，便于按主题加载：
+
+| 层级 | 目录 | 说明 |
+|------|------|------|
+| 入口 | [context/README.md](context/README.md) | AIEF 说明与目录结构 |
+| 索引入口 | [context/INDEX.md](context/INDEX.md) | 建议优先阅读与按主题导航 |
+| 业务 | context/business/ | 领域模型、用户场景、输出结构（[DOMAIN.md](context/business/DOMAIN.md)） |
+| 技术 | context/tech/ | 架构、API、流程、检查清单（[tech/README.md](context/tech/README.md)） |
+| 经验 | context/experience/ | 问题与解决方案复盘（[experience/INDEX.md](context/experience/INDEX.md)） |
+
+AI 协作时以 [AGENTS.md](AGENTS.md) 的 Context Entry 与 Knowledge Base 表为准加载上述上下文。
+
+## 版本发布
+
+在项目根目录执行（需 Git、可选 [GitHub CLI](https://cli.github.com/) 以自动创建 Release）：
+
+```bash
+python scripts/release_version.py --bump patch --dry-run   # 预览
+python scripts/release_version.py --bump patch --push      # 发布并推送、创建 GitHub Release
+```
+
+详见 `scripts/README.md`。
 
 ## 分支工作流
 

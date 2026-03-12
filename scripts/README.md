@@ -1,5 +1,19 @@
 # 脚本说明 (Scripts)
 
+## `release_version.py`
+跨平台版本发布：更新 VERSION、将 CHANGELOG 中 [Unreleased] 归入新版本、提交并打 tag。使用 `--push` 时会自动创建 GitHub Release（需安装 [GitHub CLI](https://cli.github.com/) 并执行 `gh auth login`）。
+
+用法（在项目根目录执行）：
+
+```bash
+python scripts/release_version.py --bump patch          # 0.2.0 -> 0.2.1
+python scripts/release_version.py --bump minor          # 0.2.0 -> 0.3.0
+python scripts/release_version.py --version 0.3.0       # 指定版本号
+python scripts/release_version.py --bump patch --dry-run # 仅预览，不写入、不提交
+python scripts/release_version.py --bump patch --push   # 提交并推送分支与 tag，并创建 GitHub Release（需 gh）
+python scripts/release_version.py --bump patch --no-commit # 只改 VERSION/CHANGELOG，不 git commit/tag
+```
+
 ## `gui_regression.ps1`
 快速执行 GUI 相关回归测试。
 

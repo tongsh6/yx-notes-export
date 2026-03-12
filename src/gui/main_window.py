@@ -151,6 +151,7 @@ class MainWindow(QMainWindow):
     _lbl_guid: QLabel | None = None
     _edit_guid: QLineEdit | None = None
     _chk_resume: QCheckBox | None = None
+    _chk_incremental: QCheckBox | None = None
     _chk_fail_log: QCheckBox | None = None
     _edit_output: QLineEdit | None = None
     _btn_browse: QPushButton | None = None
@@ -208,7 +209,7 @@ class MainWindow(QMainWindow):
         splitter.addWidget(self._build_right_panel())
         splitter.setStretchFactor(0, 0)
         splitter.setStretchFactor(1, 1)
-        splitter.setSizes([420, 640])
+        splitter.setSizes([520, 540])
         root_layout.addWidget(splitter, 1)
 
         root_layout.addWidget(self._build_statusbar())
@@ -246,7 +247,7 @@ class MainWindow(QMainWindow):
         # 内容容器（放在 ScrollArea 里，防止内容过多时布局错位）
         inner = QWidget()
         inner.setMinimumWidth(340)
-        inner.setMaximumWidth(480)
+        inner.setMaximumWidth(560)
         layout = QVBoxLayout(inner)
         layout.setContentsMargins(16, 10, 12, 12)
         layout.setSpacing(16)
@@ -426,16 +427,19 @@ class MainWindow(QMainWindow):
         ):
             w.setVisible(False)
 
-        # 断点续传 + 失败记录
+        # 断点续传 + 增量 + 失败记录
         self._chk_resume = QCheckBox("断点续传（跳过已导出且未更新的笔记）")
         self._chk_resume.setChecked(True)
+        self._chk_incremental = QCheckBox("仅增量（只导出新增/已修改）")
+        self._chk_incremental.setToolTip("依赖上次导出的 .export-index.json，仅处理有变化的笔记")
         self._chk_fail_log = QCheckBox("保存失败记录")
         self._chk_fail_log.setChecked(True)
-        opts_row = QHBoxLayout()
-        opts_row.addWidget(self._chk_resume)
-        opts_row.addWidget(self._chk_fail_log)
-        opts_row.addStretch()
-        layout.addLayout(opts_row)
+        opts_layout = QVBoxLayout()
+        opts_layout.setSpacing(4)
+        opts_layout.addWidget(self._chk_resume)
+        opts_layout.addWidget(self._chk_incremental)
+        opts_layout.addWidget(self._chk_fail_log)
+        layout.addLayout(opts_layout)
 
         output_row = QHBoxLayout()
         output_row.setSpacing(8)
@@ -504,6 +508,7 @@ class MainWindow(QMainWindow):
 
     def _build_right_panel(self) -> QWidget:
         panel = QWidget()
+        panel.setMinimumWidth(380)
         layout = QVBoxLayout(panel)
         layout.setContentsMargins(12, 10, 16, 12)
         layout.setSpacing(6)
@@ -774,6 +779,7 @@ class MainWindow(QMainWindow):
             failed_guids=failed_guids,
             all_notebooks=self._all_notebooks,
             resume=self._chk_resume.isChecked(),
+            incremental=self._chk_incremental.isChecked() if self._chk_incremental else False,
             event_logger=self._event_logger,
         )
         self._export_worker = worker
@@ -791,6 +797,12 @@ class MainWindow(QMainWindow):
         if hasattr(worker, "activity"):
             getattr(worker, "activity").connect(
                 lambda msg, w=worker: self._on_exp_activity_for(w, msg)
+            )
+        if hasattr(worker, "incremental_stats"):
+            getattr(worker, "incremental_stats").connect(
+                lambda total, to_export: self._append_log(
+                    f"增量：共 {total} 条，需导出 {to_export} 条"
+                )
             )
         if hasattr(worker, "export_done"):
             getattr(worker, "export_done").connect(

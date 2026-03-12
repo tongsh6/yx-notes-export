@@ -82,6 +82,23 @@ class Exporter:
             self._index_cache[nb_dir] = index
         return index
 
+    def should_export(self, meta: NoteMetadata, notebook: NotebookInfo) -> bool:
+        """
+        是否需导出该笔记（未在本地索引中，或 updated 已变更）。
+        用于增量导出：仅对返回 True 的笔记调用 export_note。
+        """
+        if not self._resume:
+            return True
+        nb_dir = self._notebook_dir(notebook)
+        index = self._get_index(nb_dir)
+        return not index.should_skip(meta, nb_dir)
+
+    def filter_notes_to_export(
+        self, metas: List[NoteMetadata], notebook: NotebookInfo
+    ) -> List[NoteMetadata]:
+        """从笔记元数据列表中筛出需要导出的（新增或已修改）。"""
+        return [m for m in metas if self.should_export(m, notebook)]
+
     # ── 附件 ─────────────────────────────────────────────────────────────────
 
     def _save_resources(
