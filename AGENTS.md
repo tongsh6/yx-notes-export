@@ -28,6 +28,3 @@ Knowledge Base（文档体系按 AIEF 组织，详见 context/README.md）：
 | context/business/ | Business knowledge | Understanding requirements, domain models；入口 [business/README.md](context/business/README.md) |
 | context/tech/ | Technical docs | Architecture, API, conventions；入口 [tech/README.md](context/tech/README.md) |
 | context/experience/ | Experience library | Avoid repeating mistakes；入口 [experience/INDEX.md](context/experience/INDEX.md) |
-| workflow/ | Workflows | Complex task phase guides (optional) |
-| docs/standards/ | Standards | Skill/Command/Agent specs (L1, optional) |
-| docs/standards/patterns/ | Patterns | Phase routing, experience mgmt, context loading (L2, optional) |

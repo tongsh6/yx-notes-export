@@ -6,6 +6,19 @@ All notable changes to this project will be documented in this file.
 
 ## [0.3.0] - 2026-03-12
 
+### Added
+- **增量导出**：CLI 新增 `--incremental` 标志，仅导出新增或已修改的笔记（依赖本地 `.export-index.json`，隐含 `--resume`）
+- GUI 新增「仅增量」勾选框，支持增量导出模式，并在日志面板显示"增量：共 N 条，需导出 M 条"
+- `Exporter` 新增 `should_export` / `filter_notes_to_export` 方法，实现笔记级增量过滤
+- 版本发布脚本 `scripts/release_version.py`：跨平台自动更新 `VERSION`、归入 CHANGELOG、提交 tag，可选通过 `--push` 自动创建 GitHub Release
+- 应用图标：`src/gui/app_icon.svg`（笔记+导出箭头）与 `src/gui/check_white.svg`（勾选框对勾）
+
+### Improved
+- GUI 图标体验：`gui_main.py` 启动时设置 Windows 任务栏 AppUserModelID，并为主窗口与任务栏图标加载 SVG 应用图标
+- GUI 主题：深色/浅色模式下 QCheckBox 均使用显式样式（含选中态白色对勾图标），改善勾选可见度
+- GUI 布局：splitter 初始比例调整为 520/540，左侧内容区最大宽度放宽至 560px，导出选项三个勾选改为竖排
+- 右侧日志面板设置最小宽度 380px，防止拖拽过窄
+
 ## [0.2.5] - 2026-03-04
 
 ### Improved
